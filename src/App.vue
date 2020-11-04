@@ -10,7 +10,8 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import ColumnList, {ColumnProps} from './components/ColumnList.vue'
 import GlobalHeader, {UserProps} from './components/GlobalHeader.vue'
 const currentUser: UserProps = {
-  isLogin: false
+  isLogin: true,
+  name: "小周"
 }
 const TestData: ColumnProps[]= [
   {
