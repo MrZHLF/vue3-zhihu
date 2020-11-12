@@ -17,12 +17,16 @@
 import { defineComponent, ref } from 'vue'
 import ValidateInput, {RulesProp} from '../components/ValidateInput.vue'
 import ValidateForm from '../components/ValidateForm.vue'
+import { useRouter} from 'vue-router'
+import {useStore} from 'vuex'
 export default defineComponent({
   components:{
     ValidateInput,
     ValidateForm
   },
   setup () {
+    const router = useRouter()
+    const store = useStore()
     const inputRef = ref<any>()
     const emailValue = ref('13@qq.com')
     const emailRules: RulesProp = [
@@ -34,7 +38,10 @@ export default defineComponent({
       { type: 'required', message: '密码不能为空' }
     ]
     const onFormSubmit = (result: boolean) => {
-      console.log(inputRef.value);
+      if (result) {
+        router.push('/')
+        store.commit('login')
+      }
     }
     return {
       emailRules,

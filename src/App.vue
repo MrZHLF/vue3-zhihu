@@ -5,20 +5,19 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, ref } from 'vue'
+import { computed, defineComponent } from 'vue'
 import 'bootstrap/dist/css/bootstrap.min.css'
-import GlobalHeader, {UserProps} from './components/GlobalHeader.vue'
-const currentUser: UserProps = {
-  isLogin: false,
-  name: "小周"
-}
+import GlobalHeader from './components/GlobalHeader.vue'
+import { useStore } from 'vuex'
 export default defineComponent({
   components: {
     GlobalHeader,
   },
   setup () {
+    const store = useStore();
+    const user = computed(() => store.state.user)
     return {
-      user:currentUser,
+      user
     }
   }
 })
