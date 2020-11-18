@@ -38,3 +38,11 @@ export default defineComponent({
   }
 })
 </script>
+<style lang="scss" scoped>
+  .card-body {
+    img {
+      width: 100px;
+      height: 100px;
+    }
+  }
+</style>

@@ -28,19 +28,26 @@ export default defineComponent({
     const router = useRouter()
     const store = useStore()
     const inputRef = ref<any>()
-    const emailValue = ref('13@qq.com')
+    const emailValue = ref('')
     const emailRules: RulesProp = [
       { type: 'required', message: '电子邮箱地址不能为空' },
       { type: 'email', message: '请输入正确的电子邮箱格式' }
     ]
-    const passwordlValue = ref('1515')
+    const passwordlValue = ref('')
     const passwordRules: RulesProp = [
       { type: 'required', message: '密码不能为空' }
     ]
     const onFormSubmit = (result: boolean) => {
       if (result) {
-        router.push('/')
-        store.commit('login')
+        const payload = {
+          email: emailValue.value,
+          password: passwordlValue.value,
+        }
+        store.dispatch('loginAndFetch',payload).then((res) => {
+          console.log(res);
+          router.push('/')
+          store.commit('login')
+        })
       }
     }
     return {
