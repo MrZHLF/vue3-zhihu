@@ -1,6 +1,12 @@
 import { Commit, createStore } from 'vuex'
 import axios from 'axios'
 
+export interface ResponseType<P = {}> {
+  code: number;
+  msg: string;
+  data: P;
+}
+
 export interface UserProps {
   isLogin: boolean;
   nickName?: string;
@@ -8,10 +14,11 @@ export interface UserProps {
   column?: string;
   email?: string;
 }
-interface ImageProps {
+export interface ImageProps {
   _id?: string;
   url?: string;
   createdAt?: string;
+  fitUrl?: string;
 }
 
 export interface ColumnProps {
@@ -22,13 +29,14 @@ export interface ColumnProps {
 }
 
 export interface PostProps {
-  _id: string;
+  _id?: string;
   title: string;
   excerpt?: string;
   content?: string;
-  image?: string;
-  createdAt: string;
+  image?: ImageProps | string;
+  createdAt?: string;
   column: string;
+  author?: string;
 }
 
 export interface GlobalErrorProps {
@@ -48,6 +56,7 @@ export interface GlobalDataProps {
 const getAndCommit = async (url: string, mutationsName: string, commit: Commit) => {
   const { data } = await axios.get(url)
   commit(mutationsName, data)
+  return data
 }
 
 const postAndCommit = async (url: string, mutationsName: string, commit: Commit, payload: any) => {
@@ -77,6 +86,11 @@ export default createStore<GlobalDataProps>({
       state.token = token
       axios.defaults.headers.common.Authorization = `Bearer ${token}`;
     },
+    logout (state) {
+      state.token = ''
+      localStorage.removeItem('ZhToken')
+      delete axios.defaults.headers.common.Authorization
+    },
     fetchCurrentUser(state,rawData) {
       state.user = { isLogin: true, ...rawData.data}
     },
@@ -103,21 +117,25 @@ export default createStore<GlobalDataProps>({
   },
   actions: {
     fetchColumns({ commit }) {
-      getAndCommit('/columns', 'fetchColumns', commit)
+      return getAndCommit('/columns', 'fetchColumns', commit)
     },
     fetchColumn({ commit }, cid) {
-      getAndCommit(`/columns/${cid}`, 'fetchColumn', commit)
+      return getAndCommit(`/columns/${cid}`, 'fetchColumn', commit)
     },
     fetchPost({ commit }, cid) {
-      getAndCommit(`/columns/${cid}/posts`, 'fetchPost', commit)
+      return getAndCommit(`/columns/${cid}/posts`, 'fetchPost', commit)
     },
     fetchCurrentUser( {commit} ) {
       //获取用户信息
-      getAndCommit('/user/current','fetchCurrentUser',commit)
+      return getAndCommit('/user/current','fetchCurrentUser',commit)
     },
     login ({ commit }, payload) {
       // 登录
       return postAndCommit(`/user/login`, 'login', commit , payload)
+    },
+    createPost ({ commit }, payload) {
+      // 创建文章
+      return postAndCommit(`/posts`, 'createPost', commit , payload)
     },
     loginAndFetch({ dispatch },loginData) {
       return dispatch('login',loginData).then(() => {
@@ -131,6 +149,9 @@ export default createStore<GlobalDataProps>({
     },
     getPostsById: (state)  => (cid: string) => {
       return state.posts.filter(post => post.column == cid)
+    },
+    getCurrentPost: (state) => (id: string) => {
+      return state.posts
     }
   }
 })
