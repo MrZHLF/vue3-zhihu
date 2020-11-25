@@ -1,5 +1,6 @@
 import { Commit, createStore } from 'vuex'
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
+import { arrToObj, objToArr } from '@/helper'
 
 export interface ResponseType<P = {}> {
   code: number;
@@ -13,6 +14,8 @@ export interface UserProps {
   _id?: string;
   column?: string;
   email?: string;
+  avatar?: ImageProps;
+  description?: string;
 }
 export interface ImageProps {
   _id?: string;
@@ -36,7 +39,11 @@ export interface PostProps {
   image?: ImageProps | string;
   createdAt?: string;
   column: string;
-  author?: string;
+  author?: string | UserProps;
+}
+
+interface ListProps<P> {
+  [id: string]: P;
 }
 
 export interface GlobalErrorProps {
@@ -47,8 +54,8 @@ export interface GlobalErrorProps {
 export interface GlobalDataProps { 
   error: GlobalErrorProps;
   token: string;
-  columns: ColumnProps[];
-  posts: PostProps[];
+  columns: ListProps<ColumnProps>;
+  posts: ListProps<PostProps>;
   user: UserProps;
   loading: boolean;
 }
@@ -65,20 +72,22 @@ const postAndCommit = async (url: string, mutationsName: string, commit: Commit,
   return data
 }
 
+const asyncAndCommit = async (url: string, mutationsName: string, commit: Commit,config: AxiosRequestConfig = { method: 'get' }) => {
+  const { data } = await axios(url, config)
+  commit(mutationsName,data)
+  return data
+}
 
 export default createStore<GlobalDataProps>({
   state: {
     error: { status: false },
     token: localStorage.getItem('ZhToken') ||  '',
     loading: false,
-    columns: [],
-    posts: [],
+    columns:{},
+    posts: {},
     user: { isLogin: false }
   },
   mutations: {
-    // login (state) {
-    //   state.user = { ...state.user, isLogin:true, name:"小周" }
-    // },
     login (state,rawData) {
       console.log(rawData,'rawData');
       const { token } = rawData.data
@@ -95,16 +104,25 @@ export default createStore<GlobalDataProps>({
       state.user = { isLogin: true, ...rawData.data}
     },
     createPost(state, newPost) {
-      state.posts.push(newPost)
+      state.posts[newPost._id] = newPost
     },
     fetchColumns(state,rawData) {
-      state.columns = rawData.data.list
+      state.columns = arrToObj(rawData.data.list)
     },
     fetchColumn(state,rawData) {
-      state.columns =[rawData.data]
+      state.columns[rawData.data._id] =rawData.data
     },
     fetchPost(state,rawData) {
-      state.posts = rawData.data.list
+      state.posts[rawData.data._id] =rawData.data
+    },
+    fetchPosts(state,rawData) {
+      state.posts = arrToObj(rawData.data.list)
+    },
+    deletePost(state,{ data }) {
+      delete state.posts[data._id]
+    },
+    updatePost(state, { data }) {
+      state.posts[data._id] = data
     },
     setLoading(state,status) {
       //加载
@@ -123,7 +141,22 @@ export default createStore<GlobalDataProps>({
       return getAndCommit(`/columns/${cid}`, 'fetchColumn', commit)
     },
     fetchPost({ commit }, cid) {
-      return getAndCommit(`/columns/${cid}/posts`, 'fetchPost', commit)
+      return getAndCommit(`/posts/${cid}`, 'fetchPost', commit)
+    },
+    fetchPosts({ commit }, cid) {
+      return getAndCommit(`/columns/${cid}/posts`, 'fetchPosts', commit)
+    },
+    updatePost({ commit }, { id, payload }) {
+      return asyncAndCommit(`/posts/${id}`, 'updatePost', commit, {
+        method: 'patch',
+        data: payload
+      })
+    },
+    deletePost({ commit }, id) {
+      // 删除文章
+      return asyncAndCommit(`/posts/${id}`, 'deletePost', commit, {
+        method: 'delete'
+      })
     },
     fetchCurrentUser( {commit} ) {
       //获取用户信息
@@ -144,14 +177,17 @@ export default createStore<GlobalDataProps>({
     }
   },
   getters: {
+    getColumns: (state) => {
+      return objToArr(state.columns)
+    },
     getColumnById: (state) => (id: string) => {
-      return state.columns.find(c => c._id == id)
+      return state.columns[id]
     },
     getPostsById: (state)  => (cid: string) => {
-      return state.posts.filter(post => post.column == cid)
+      return objToArr(state.posts).filter(post => post.column == cid)
     },
     getCurrentPost: (state) => (id: string) => {
-      return state.posts
+      return state.posts[id]
     }
   }
 })

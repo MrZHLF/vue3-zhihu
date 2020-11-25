@@ -33,7 +33,7 @@ export default defineComponent({
       //列表数据
       store.dispatch('fetchColumns')
     })
-    const list = computed(() => store.state.columns)
+    const list = computed(() => store.getters.getColumns)
     return {
       list
     }

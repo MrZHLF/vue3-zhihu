@@ -30,7 +30,7 @@ export default defineComponent({
     const currentId = route.params.id //路由跳转id
     onMounted(() => {
       store.dispatch('fetchColumn', currentId)
-      store.dispatch('fetchPost', currentId)
+      store.dispatch('fetchPosts', currentId)
     })
     const column = computed(() => {
       const selectColumn = store.getters.getColumnById(currentId)
